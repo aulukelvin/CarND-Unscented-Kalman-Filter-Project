@@ -135,7 +135,7 @@ void UKF::Prediction(double delta_t) {
   //create sigma point matrix
   GenerateSigmaPoints();
   AugmentedSigmaPoints();
-  SigmaPointPrediction(delta_t);
+  SigmaPointPrediction(delta_t/1000000);
   PredictMeanAndCovariance();
 }
 
