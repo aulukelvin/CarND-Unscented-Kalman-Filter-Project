@@ -10,7 +10,7 @@
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-class UKF {
+class UKF { 
 public:
 
   ///* initially set to false, set to true in first call of ProcessMeasurement
@@ -28,6 +28,16 @@ public:
   ///* state covariance matrix
   MatrixXd P_;
 
+  
+  //create augmented mean vector
+  VectorXd x_aug;
+  
+  //create augmented state covariance
+  MatrixXd P_aug;
+  
+  //create augmented sigma point matrix
+  MatrixXd Xsig_aug;
+  
   ///* predicted sigma points matrix
   MatrixXd Xsig_pred_;
 
@@ -102,6 +112,15 @@ public:
    * @param meas_package The measurement at k+1
    */
   void UpdateRadar(MeasurementPackage meas_package);
+  
+  void GenerateSigmaPoints();
+  
+  void AugmentedSigmaPoints();
+  
+  void SigmaPointPrediction(double delta_t);
+
+  void PredictMeanAndCovariance();
+
 };
 
 #endif /* UKF_H */
