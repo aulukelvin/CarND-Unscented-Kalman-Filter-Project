@@ -77,6 +77,21 @@ public:
   ///* Sigma point spreading parameter
   double lambda_;
 
+  int n_z_radar_;
+  
+  int n_z_lidar;
+  
+  MatrixXd S_;
+  
+  MatrixXd R_radar;
+  
+  MatrixXd R_lidar;
+  
+  MatrixXd z_;
+
+  MatrixXd Zsig_;
+
+  VectorXd z_pred_;
 
   /**
    * Constructor
@@ -120,6 +135,10 @@ public:
   void SigmaPointPrediction(double delta_t);
 
   void PredictMeanAndCovariance();
+  
+  void PredictRadarMeasurement();
+  
+  void UpdateStateRadar(MeasurementPackage meas_package);
 
 };
 
