@@ -148,12 +148,6 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
  * measurement and this one.
  */
 void UKF::Prediction(double delta_t) {
-  /**
-  TODO:
-
-  Complete this function! Estimate the object's location. Modify the state
-  vector, x_. Predict sigma points, the state, and the state covariance matrix.
-  */
   //create sigma point matrix
   GenerateSigmaPoints();
   AugmentedSigmaPoints();
@@ -337,8 +331,6 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
     
     //residual
     VectorXd z_diff = Zsig_.col(i) - z_pred_;
-    ////angle normalization
-    z_diff(1) = Tools::Normalize(z_diff(1));
     
     // state difference
     VectorXd x_diff = Xsig_pred_.col(i) - x_;
@@ -358,9 +350,6 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   
   //residual
   VectorXd z_diff = z - z_pred_;
-  
-  //angle normalization
-  z_diff(1) = Tools::Normalize(z_diff(1));
   
   //update state mean and covariance matrix
   x_ = x_ + K * z_diff;
