@@ -137,7 +137,8 @@ int main()
           msgJson["rmse_vx"] = RMSE(2);
           msgJson["rmse_vy"] = RMSE(3);
           auto msg = "42[\"estimate_marker\"," + msgJson.dump() + "]";
-          // std::cout << msg << std::endl;
+          if (sensor_type.compare("R") == 0)
+            std::cout << "estimate vs ground truth: " << estimate.transpose() <<" --> " << gt_values.transpose() << std::endl;
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
 	  
         }
