@@ -16,7 +16,7 @@ UKF::UKF() {
   use_laser_ = true;
 
   // if this is false, radar measurements will be ignored (except during init)
-  use_radar_ = false;
+  use_radar_ = true;
 
   n_x_ = 5;
   n_aug_ = 7;
@@ -85,7 +85,10 @@ UKF::UKF() {
   R_radar <<    std_radr_*std_radr_, 0, 0,
                   0, std_radphi_*std_radphi_, 0,
                   0, 0,std_radrd_*std_radrd_;
-
+  
+  R_lidar = MatrixXd(n_z_lidar,n_z_lidar);
+  R_lidar <<    std_laspx_*std_laspx_, 0,
+                  0, std_laspy_*std_laspy_;
 }
 
 UKF::~UKF() {}
@@ -298,54 +301,42 @@ void UKF::PredictMeanAndCovariance() {
 
 void UKF::UpdateLidar(MeasurementPackage meas_package) {
   //transform sigma points into measurement space ///// begin
+  Zsig_ = MatrixXd(n_z_lidar, 2 * n_aug_ +1);
   for (int i = 0; i < 2 * n_aug_ + 1; i++){  //2n+1 simga points
     // measurement model
     Zsig_(0, i) = Xsig_pred_(0, i);  //px
     Zsig_(1, i) = Xsig_pred_(1, i);  //py
-    //Zsig(2, i) = Xsig_pred_(2, i);
-    //Zsig(2, i) = Xsig_pred_(3, i);
   }
   
   //mean predicted measurement
-  VectorXd z_pred = VectorXd(n_z_lidar);
-  z_pred.fill(0.0);
+  z_pred_ = VectorXd(n_z_lidar);
+  z_pred_.fill(0.0);
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {
-    z_pred = z_pred + weights_(i) * Zsig_.col(i);
+    z_pred_ = z_pred_ + weights_(i) * Zsig_.col(i);
   }
   
   //measurement covariance matrix S
-  MatrixXd S = MatrixXd(n_z_lidar, n_z_lidar);
-  S.fill(0.0);
+  S_ = MatrixXd(n_z_lidar, n_z_lidar);
+  S_.fill(0.0);
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //2n+1 simga points
     //residual
-    VectorXd z_diff = Zsig_.col(i) - z_pred;
-    
-    //angle normalization
-    z_diff(1) = Tools::Normalize(z_diff(1));
-    
-    S = S + weights_(i) * z_diff * z_diff.transpose();
+    VectorXd z_diff = Zsig_.col(i) - z_pred_;
+    S_ = S_ + weights_(i) * z_diff * z_diff.transpose();
   }
   
   //add measurement noise covariance matrix
-  MatrixXd R = MatrixXd(n_z_lidar, n_z_lidar);
-  //R << std_laspx_*std_laspx_, 0, 0, 0,
-  //    0, std_laspy_*std_laspy_, 0, 0,
-  //    0, 0, 0, 0,
-  //    0, 0, 0, 0;
-  R << std_laspx_*std_laspx_, 0,
-  0, std_laspy_*std_laspy_;
-  S = S + R;
+  S_ = S_ + R_lidar;
   //transform sigma points into measurement space ///// end
   
   //create matrix for cross correlation Tc
-  MatrixXd Tc = MatrixXd(n_z_lidar, n_z_lidar);
+  MatrixXd Tc = MatrixXd(n_x_, n_z_lidar);
   Tc.fill(0.0);
   
   //calculate cross correlation matrix
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //2n+1 simga points
     
     //residual
-    VectorXd z_diff = Zsig_.col(i) - z_pred;
+    VectorXd z_diff = Zsig_.col(i) - z_pred_;
     ////angle normalization
     z_diff(1) = Tools::Normalize(z_diff(1));
     
@@ -359,28 +350,28 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   }
   
   //Kalman gain K;
-  MatrixXd K = Tc * S.inverse();
+  MatrixXd K = Tc * S_.inverse();
   
   //actual measurement
   VectorXd z = VectorXd(n_z_lidar);
   z << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1];// 0.0, 0.0;
   
   //residual
-  VectorXd z_diff = z - z_pred;
+  VectorXd z_diff = z - z_pred_;
   
   //angle normalization
   z_diff(1) = Tools::Normalize(z_diff(1));
   
   //update state mean and covariance matrix
   x_ = x_ + K * z_diff;
-  P_ = P_ - K*S*K.transpose();
+  P_ = P_ - K * S_ * K.transpose();
   
   //Calculate the lidar NIS.
-  double nis = z_diff.transpose() * S.inverse() * z_diff;
-  //std::cout << "NIS error= \n" << nis << std::endl;
+  double nis = z_diff.transpose() * S_.inverse() * z_diff;
+  std::cout << "NIS error= " << nis << std::endl;
   
-  std::cout << "x = \n" << x_ << std::endl;
-  std::cout << "P = \n" << P_ << std::endl;
+//  std::cout << "x = \n" << x_ << std::endl;
+//  std::cout << "P = \n" << P_ << std::endl;
   
 }
 void UKF::UpdateRadar(MeasurementPackage meas_package) {
@@ -486,7 +477,7 @@ void UKF::UpdateStateRadar(MeasurementPackage meas_package) {
   double nis = z_diff.transpose() * S_.inverse() * z_diff;
   
   //print result
-  std::cout << "NIS " << std::endl << nis << std::endl;
+  std::cout << "NIS " << nis << std::endl;
 //  std::cout << "Updated state x: " << std::endl << x_ << std::endl;
 //  std::cout << "Updated state covariance P: " << std::endl << P_ << std::endl;
   
