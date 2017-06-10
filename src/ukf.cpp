@@ -149,32 +149,11 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
  */
 void UKF::Prediction(double delta_t) {
   //create sigma point matrix
-  GenerateSigmaPoints();
   AugmentedSigmaPoints();
   SigmaPointPrediction(delta_t/1000000);
   PredictMeanAndCovariance();
 }
 
-void UKF::GenerateSigmaPoints() {
-  
-  //create sigma point matrix
-  MatrixXd Xsig = MatrixXd(n_x_, 2 * n_x_ + 1);
-  
-  //calculate square root of P
-  MatrixXd A = P_.llt().matrixL();
-  
-  //set first column of sigma point matrix
-  Xsig.col(0)  = x_;
-  
-  //set remaining sigma points
-  for (int i = 0; i < n_x_; i++)
-  {
-    Xsig.col(i+1)     = x_ + sqrt(lambda_+n_x_) * A.col(i);
-    Xsig.col(i+1+n_x_) = x_ - sqrt(lambda_+n_x_) * A.col(i);
-  }
-  
-//  std::cout << "Xsig = " << std::endl << Xsig << std::endl;
-}
 void UKF::AugmentedSigmaPoints() {
   //create augmented mean state
   x_aug.head(n_x_) = x_;

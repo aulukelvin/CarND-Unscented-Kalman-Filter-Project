@@ -128,8 +128,6 @@ public:
    */
   void UpdateRadar(MeasurementPackage meas_package);
   
-  void GenerateSigmaPoints();
-  
   void AugmentedSigmaPoints();
   
   void SigmaPointPrediction(double delta_t);
